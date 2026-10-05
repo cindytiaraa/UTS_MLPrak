@@ -1,7 +1,8 @@
-
 import argparse
 
-from src import init_dataset, preprocessing, transformation, split_data
+# 1. TAMBAHKAN 'undersampling' PADA BARIS IMPORT INI
+from src import init_dataset, preprocessing, transformation, split_data, undersampling
+from src.oversampling import jalankan_eksperimen_oversampling
 from src.utils import quiet
 
 
@@ -83,11 +84,16 @@ def main(stage: str = "all") -> None:
             "\nBaseline selesai: "
             "X_train, X_test, y_train, y_test siap dipakai."
         )
+        
+        jalankan_eksperimen_oversampling()
+        
+
+        undersampling.run()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Pipeline baseline UTS ML Soal C - bagian Cindy."
+        description="Pipeline baseline UTS ML Soal C - Kelompok 3."
     )
 
     parser.add_argument(
