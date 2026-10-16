@@ -1,99 +1,50 @@
 import argparse
 
-# 1. TAMBAHKAN 'undersampling' PADA BARIS IMPORT INI
 from src import init_dataset, preprocessing, transformation, split_data, undersampling
 from src.oversampling import jalankan_eksperimen_oversampling
+from src import naive_bayes
 from src.utils import quiet
 
-
-STAGES = [
-    "init",
-    "preprocessing",
-    "transformation",
-    "split",
-]
+# Tahap baseline (dari UTS) lalu Naive Bayes (bagian Cindy).
+STAGES = ["init", "preprocessing", "transformation", "split", "naive_bayes"]
 
 
 def main(stage: str = "all") -> None:
-    """Menjalankan pipeline sesuai stage yang dipilih."""
+    """Menjalankan pipeline sesuai stage. Pada mode satu tahap, tahap sebelumnya tetap
+    berjalan diam-diam sehingga layar hanya berisi output tahap yang dipilih."""
+    last = len(STAGES) if stage == "all" else STAGES.index(stage) + 1
 
-    # Menentukan tahap terakhir yang perlu dijalankan.
-    if stage == "all":
-        last = len(STAGES)
-    else:
-        last = STAGES.index(stage) + 1
+    def call_stage(name, fn, *args):
+        return fn(*args) if stage in ("all", name) else quiet(fn, *args)
 
-    # Menentukan apakah output suatu tahap perlu ditampilkan.
-    def show(name: str) -> bool:
-        return stage == "all" or stage == name
-
-    # Menjalankan tahap dengan atau tanpa output.
-    def call_stage(name: str, fn, *args):
-        if show(name):
-            return fn(*args)
-
-        return quiet(fn, *args)
-
-    # =========================================================
-    # 1. INIT DATASET
-    # =========================================================
     df_raw = call_stage("init", init_dataset.run)
-
     if last == 1:
         return
-
-    # =========================================================
-    # 2. PREPROCESSING
-    # =========================================================
-    df_clean = call_stage(
-        "preprocessing",
-        preprocessing.run,
-        df_raw,
-    )
-
+    df_clean = call_stage("preprocessing", preprocessing.run, df_raw)
     if last == 2:
         return
-
-    # =========================================================
-    # 3. TRANSFORMATION
-    # =========================================================
-    X, y, _scaler = call_stage(
-        "transformation",
-        transformation.run,
-        df_clean,
-    )
-
+    X, y, _scaler = call_stage("transformation", transformation.run, df_clean)
     if last == 3:
         return
+    call_stage("split", split_data.run, X, y)
+    if last == 4:
+        return
+    naive_bayes.run()      # selalu ditampilkan: nb_over dan nb_under
 
-    # =========================================================
-    # 4. SPLIT DATA
-    # =========================================================
-    call_stage(
-        "split",
-        split_data.run,
-        X,
-        y,
-    )
-
-    # =========================================================
-    # SELESAI
-    # =========================================================
     if stage == "all":
         print(
             "\nBaseline selesai: "
             "X_train, X_test, y_train, y_test siap dipakai."
         )
-        
+
         jalankan_eksperimen_oversampling()
-        
 
         undersampling.run()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Pipeline baseline UTS ML Soal C - Kelompok 3."
+        description="Pipeline UTS + Naive Bayes (bagian Cindy)."
     )
 
     parser.add_argument(
